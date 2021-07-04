@@ -1,12 +1,12 @@
-[gd_scene load_steps=12 format=2]
+[gd_scene load_steps=14 format=2]
 
 [ext_resource path="res://sprites/LevelFloor.png" type="Texture" id=1]
 [ext_resource path="res://sprites/TheKnight.png" type="Texture" id=2]
 [ext_resource path="res://sprites/TheSword.png" type="Texture" id=3]
 [ext_resource path="res://scripts/the_knight.gd" type="Script" id=4]
 [ext_resource path="res://sprites/LevelPlatform.png" type="Texture" id=5]
-[ext_resource path="res://sprites/TheKnightTwo.png" type="Texture" id=6]
 [ext_resource path="res://scripts/network_manager.gd" type="Script" id=7]
+[ext_resource path="res://scripts/the_sword.gd" type="Script" id=8]
 
 [sub_resource type="RectangleShape2D" id=1]
 extents = Vector2( 8, 8 )
@@ -20,78 +20,58 @@ extents = Vector2( 128, 8 )
 [sub_resource type="RectangleShape2D" id=4]
 extents = Vector2( 32, 8 )
 
+[sub_resource type="RectangleShape2D" id=5]
+extents = Vector2( 160, 5 )
+
+[sub_resource type="RectangleShape2D" id=6]
+extents = Vector2( 5, 120 )
+
 [node name="world" type="Node2D"]
 
 [node name="NetworkManager" type="Node2D" parent="."]
 script = ExtResource( 7 )
-knight_one_path = NodePath("../TheKnight")
-knight_two_path = NodePath("../TheKnight2")
+knight_one_path = NodePath("../KnightOne")
 
-[node name="TheKnight" type="KinematicBody2D" parent="."]
+[node name="KnightOne" type="KinematicBody2D" parent="."]
 position = Vector2( 80, 184 )
+collision_layer = 2
+collision_mask = 17
 script = ExtResource( 4 )
 move_speed = 200.0
 jump_force = 250.0
 jump_frames_max = 12
 dash_frames_max = 30
 dash_speed = 1024.0
-drop_speed = 1024.0
+drop_speed = 512.0
+sword_grab_distance = 16.0
+counter_frames_max = 3
+held_sword_path = NodePath("../SwordOne")
 
-[node name="TheKnight" type="Sprite" parent="TheKnight"]
+[node name="TheKnight" type="Sprite" parent="KnightOne"]
 texture = ExtResource( 2 )
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="TheKnight"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="KnightOne"]
 shape = SubResource( 1 )
 
-[node name="Sword" type="KinematicBody2D" parent="TheKnight"]
-position = Vector2( 16, 0 )
-collision_layer = 2
-collision_mask = 3
+[node name="SwordOne" type="KinematicBody2D" parent="."]
+position = Vector2( 96, 184 )
+collision_layer = 8
+script = ExtResource( 8 )
+throw_speed = 400.0
+rotation_speed = 1080.0
 
-[node name="TheSword" type="Sprite" parent="TheKnight/Sword"]
+[node name="TheSword" type="Sprite" parent="SwordOne"]
 texture = ExtResource( 3 )
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="TheKnight/Sword"]
-position = Vector2( 3, 0 )
-shape = SubResource( 2 )
-
-[node name="TheKnight2" type="KinematicBody2D" parent="."]
-position = Vector2( 240, 184 )
-script = ExtResource( 4 )
-__meta__ = {
-"_editor_description_": ""
-}
-move_speed = 200.0
-jump_force = 250.0
-jump_frames_max = 12
-dash_frames_max = 30
-dash_speed = 1024.0
-drop_speed = 1024.0
-
-[node name="TheKnight" type="Sprite" parent="TheKnight2"]
-texture = ExtResource( 6 )
-flip_h = true
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="TheKnight2"]
-shape = SubResource( 1 )
-
-[node name="Sword" type="KinematicBody2D" parent="TheKnight2"]
-position = Vector2( -16, 0 )
-rotation = 3.14159
-collision_layer = 2
-collision_mask = 3
-
-[node name="TheSword" type="Sprite" parent="TheKnight2/Sword"]
-texture = ExtResource( 3 )
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="TheKnight2/Sword"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="SwordOne"]
 position = Vector2( 3, 0 )
 shape = SubResource( 2 )
 
 [node name="Level" type="Node2D" parent="."]
 
 [node name="LevelFloor" type="StaticBody2D" parent="Level"]
-position = Vector2( 160, 200 )
+position = Vector2( 160, 220 )
+collision_mask = 31
 
 [node name="LevelFloor" type="Sprite" parent="Level/LevelFloor"]
 texture = ExtResource( 1 )
@@ -100,7 +80,8 @@ texture = ExtResource( 1 )
 shape = SubResource( 3 )
 
 [node name="LevelPlatform" type="StaticBody2D" parent="Level"]
-position = Vector2( 48, 136 )
+position = Vector2( 48, 120 )
+collision_mask = 31
 
 [node name="Sprite" type="Sprite" parent="Level/LevelPlatform"]
 texture = ExtResource( 5 )
@@ -110,7 +91,8 @@ shape = SubResource( 4 )
 one_way_collision = true
 
 [node name="LevelPlatform2" type="StaticBody2D" parent="Level"]
-position = Vector2( 272, 136 )
+position = Vector2( 272, 120 )
+collision_mask = 31
 
 [node name="Sprite" type="Sprite" parent="Level/LevelPlatform2"]
 texture = ExtResource( 5 )
@@ -118,3 +100,31 @@ texture = ExtResource( 5 )
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Level/LevelPlatform2"]
 shape = SubResource( 4 )
 one_way_collision = true
+
+[node name="TopBarrier" type="StaticBody2D" parent="Level"]
+position = Vector2( 160, 0 )
+collision_mask = 31
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Level/TopBarrier"]
+shape = SubResource( 5 )
+
+[node name="BottomBarrier" type="StaticBody2D" parent="Level"]
+position = Vector2( 160, 240 )
+collision_mask = 31
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Level/BottomBarrier"]
+shape = SubResource( 5 )
+
+[node name="LeftBarrier" type="StaticBody2D" parent="Level"]
+position = Vector2( 0, 120 )
+collision_mask = 31
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Level/LeftBarrier"]
+shape = SubResource( 6 )
+
+[node name="RightBarrier" type="StaticBody2D" parent="Level"]
+position = Vector2( 320, 120 )
+collision_mask = 31
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Level/RightBarrier"]
+shape = SubResource( 6 )

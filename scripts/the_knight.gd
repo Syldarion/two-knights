@@ -7,20 +7,29 @@ export(int) var jump_frames_max
 export(int) var dash_frames_max
 export(float) var dash_speed
 export(float) var drop_speed
+export(float) var sword_grab_distance
+export(int) var counter_frames_max
+
+export(NodePath) var held_sword_path
+
+onready var held_sword = get_node(held_sword_path)
 
 puppet var puppet_pos = Vector2()
 
 var velocity = Vector2()
 var facing = 1
 
-var dash_frames
-var can_dash
-var dashing
 var jump_frames = 0
 var can_jump
 var jumping
 var dropping
 var can_drop
+var is_countering
+var counter_frames = 0
+var in_counter_recovery
+
+var sword_thrown
+var retrieving_sword
 
 func _ready():
 	pass
@@ -28,7 +37,6 @@ func _ready():
 func _physics_process(delta):
 	if is_network_master():
 		get_input()
-		check_dash()
 		check_jump()
 		check_drop()
 		
@@ -37,21 +45,29 @@ func _physics_process(delta):
 		else:
 			velocity.y += 1200 * delta
 		
-		if dashing:
-			velocity.y = 0
-			velocity.x = facing * dash_speed
-		elif dropping:
+		if retrieving_sword:
+			var sword_diff = held_sword.position - position
+			var sword_dist = sword_diff.length()
+			var sword_dir = sword_diff.normalized()
+			velocity = sword_dir * dash_speed
+			if sword_dist <= sword_grab_distance:
+				retrieving_sword = false
+				sword_thrown = false
+				velocity = Vector2.ZERO
+		
+		if dropping:
 			velocity.x = 0
 			velocity.y = drop_speed
 		
-		velocity = move_and_slide(velocity, Vector2.UP)
+		if is_countering:
+			counter_frames += 1
+			if counter_frames > counter_frames_max:
+				is_countering = false
+			modulate = Color.blue
+		else:
+			modulate = Color.white
 		
-		if global_transform.origin.x < -16:
-			global_transform.origin.x = 336
-		elif global_transform.origin.x > 336:
-			global_transform.origin.x = -16
-		if global_transform.origin.y > 256:
-			global_transform.origin.y = -16
+		velocity = move_and_slide(velocity, Vector2.UP)
 		
 		rset_unreliable("puppet_pos", global_transform.origin)
 	else:
@@ -60,41 +76,43 @@ func _physics_process(delta):
 func get_input():
 	velocity.x = 0.0
 	
-	if not dashing and not dropping:
-		if Input.is_action_pressed("move_left"):
+	var left_stick = Vector2(Input.get_joy_axis(0, JOY_AXIS_0),
+							 Input.get_joy_axis(0, JOY_AXIS_1))
+	
+	if not dropping:
+		if left_stick.x < -0.1:
 			velocity.x -= move_speed # need to move these out of here, one place for velocity
 			face(-1)
-		elif Input.is_action_pressed("move_right"):
+		elif left_stick.x > 0.1:
 			velocity.x += move_speed
 			face(1)
 		jumping = Input.is_action_pressed("jump")
-		
-	if Input.is_action_just_pressed("dash"):
-		if can_dash:
-			dashing = true
-			can_dash = false
-			dash_frames = 0
-		elif dashing:
-			dashing = false
-			can_dash = false
-			dash_frames = 0
 		
 	if Input.is_action_just_pressed("drop"):
 		if can_drop:
 			dropping = true
 			can_drop = false
-			if dashing:
-				dashing = false
-
-func check_dash():
-	if dashing:
-		can_dash = false
-		dash_frames += 1
-		if dash_frames > dash_frames_max:
-			dashing = false
+	
+	if not dropping:
+		if not sword_thrown:
+			var point_angle = get_point_and_angle(left_stick.x, left_stick.y)
+			held_sword.position = position + Vector2(point_angle.x, point_angle.y) * 16
+			held_sword.rotation_degrees = point_angle.z
+			
+			if Input.is_action_just_pressed("throw"):
+				held_sword.throw(left_stick)
+				sword_thrown = true
+		elif Input.is_action_just_pressed("throw") and sword_thrown:
+			held_sword.halt()
+			retrieving_sword = true
 	else:
-		if is_on_floor():
-			can_dash = true
+		var point_angle = get_point_and_angle(0.0, 1.0)
+		held_sword.position = position + Vector2(point_angle.x, point_angle.y) * 16
+		held_sword.rotation_degrees = point_angle.z
+		
+	if Input.is_action_just_pressed("counter") and not is_countering:
+		is_countering = true
+		counter_frames = 0
 
 func check_jump():
 	if jumping and can_jump:
@@ -119,12 +137,17 @@ func face(direction):
 	facing = direction
 	if facing == -1:
 		$TheKnight.flip_h = true
-		$Sword.rotation_degrees = 180
-		$Sword.position = Vector2(-16, 0)
 	elif facing == 1:
 		$TheKnight.flip_h = false
-		$Sword.rotation_degrees = 0
-		$Sword.position = Vector2(16, 0)
 
 func assign_control(id):
 	set_network_master(id)
+
+func grab_sword(sword):
+	add_child(sword)
+
+func get_point_and_angle(axis_x, axis_y):
+	var unit_coord = Vector2.RIGHT
+	if abs(axis_x) > 0.1 or abs(axis_y) > 0.1:
+		unit_coord = Vector2(axis_x, axis_y).normalized()
+	return Vector3(unit_coord.x, unit_coord.y, rad2deg(unit_coord.angle()))

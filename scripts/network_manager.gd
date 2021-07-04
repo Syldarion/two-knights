@@ -63,7 +63,7 @@ func host_game():
 	update_player_list()
 	get_tree().set_network_peer(network_peer)
 	knight_one.assign_control(network_peer.get_unique_id())
-	knight_two.assign_control(-1)
+	# knight_two.assign_control(-1)
 	# var my_player = PlayerManager.spawn_player(network_peer.get_unique_id(), spawn_position)
 	# get_node("/root/world/Camera").set_target(my_player)
 
