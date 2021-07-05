@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=2]
+[gd_scene load_steps=16 format=2]
 
 [ext_resource path="res://sprites/LevelFloor.png" type="Texture" id=1]
 [ext_resource path="res://sprites/TheKnight.png" type="Texture" id=2]
@@ -8,6 +8,7 @@
 [ext_resource path="res://fonts/Hack-Regular.tres" type="DynamicFont" id=6]
 [ext_resource path="res://scripts/network_manager.gd" type="Script" id=7]
 [ext_resource path="res://scripts/the_sword.gd" type="Script" id=8]
+[ext_resource path="res://sprites/TheKnightTwo.png" type="Texture" id=9]
 
 [sub_resource type="RectangleShape2D" id=1]
 extents = Vector2( 8, 8 )
@@ -32,13 +33,14 @@ extents = Vector2( 5, 120 )
 [node name="NetworkManager" type="Node2D" parent="."]
 script = ExtResource( 7 )
 knight_one_path = NodePath("../KnightOne")
+knight_two_path = NodePath("../KnightTwo")
 
 [node name="KnightOne" type="KinematicBody2D" parent="."]
 position = Vector2( 80, 184 )
 collision_layer = 2
 collision_mask = 17
 script = ExtResource( 4 )
-move_speed = 200.0
+move_speed = 128.0
 jump_force = 250.0
 jump_frames_max = 12
 dash_frames_max = 30
@@ -46,6 +48,7 @@ dash_speed = 1024.0
 drop_speed = 512.0
 sword_grab_distance = 16.0
 counter_frames_max = 3
+fall_speed = 20.0
 held_sword_path = NodePath("../SwordOne")
 
 [node name="TheKnight" type="Sprite" parent="KnightOne"]
@@ -65,6 +68,42 @@ rotation_speed = 1080.0
 texture = ExtResource( 3 )
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="SwordOne"]
+position = Vector2( 3, 0 )
+shape = SubResource( 2 )
+
+[node name="KnightTwo" type="KinematicBody2D" parent="."]
+position = Vector2( 80, 184 )
+collision_layer = 2
+collision_mask = 17
+script = ExtResource( 4 )
+move_speed = 128.0
+jump_force = 250.0
+jump_frames_max = 12
+dash_frames_max = 30
+dash_speed = 1024.0
+drop_speed = 512.0
+sword_grab_distance = 16.0
+counter_frames_max = 3
+fall_speed = 20.0
+held_sword_path = NodePath("../SwordTwo")
+
+[node name="TheKnight" type="Sprite" parent="KnightTwo"]
+texture = ExtResource( 9 )
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="KnightTwo"]
+shape = SubResource( 1 )
+
+[node name="SwordTwo" type="KinematicBody2D" parent="."]
+position = Vector2( 96, 184 )
+collision_layer = 8
+script = ExtResource( 8 )
+throw_speed = 400.0
+rotation_speed = 1080.0
+
+[node name="TheSword" type="Sprite" parent="SwordTwo"]
+texture = ExtResource( 3 )
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="SwordTwo"]
 position = Vector2( 3, 0 )
 shape = SubResource( 2 )
 
@@ -130,6 +169,12 @@ collision_mask = 31
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Level/RightBarrier"]
 shape = SubResource( 6 )
 
+[node name="KnightOneSpawn" type="Node2D" parent="Level"]
+position = Vector2( 80, 200 )
+
+[node name="KnightTwoSpawn" type="Node2D" parent="Level"]
+position = Vector2( 240, 200 )
+
 [node name="LobbyUI" type="PanelContainer" parent="."]
 margin_left = 99.643
 margin_top = 8.19109
@@ -149,7 +194,7 @@ margin_bottom = 67.0
 margin_right = 107.0
 margin_bottom = 20.0
 custom_fonts/font = ExtResource( 6 )
-text = "192.168.1.12:25565"
+text = "localhost:9999"
 placeholder_text = "IP:PORT"
 
 [node name="HostButton" type="Button" parent="LobbyUI/VBoxContainer"]
@@ -165,3 +210,6 @@ margin_right = 107.0
 margin_bottom = 60.0
 custom_fonts/font = ExtResource( 6 )
 text = "Join as Red Knight"
+
+[connection signal="pressed" from="LobbyUI/VBoxContainer/HostButton" to="NetworkManager" method="_on_HostButton_pressed"]
+[connection signal="pressed" from="LobbyUI/VBoxContainer/JoinButton" to="NetworkManager" method="_on_JoinButton_pressed"]

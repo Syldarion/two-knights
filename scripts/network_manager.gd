@@ -11,6 +11,9 @@ onready var knight_two = get_node(knight_two_path) as Knight
 var network_peer = null
 var player_states = {}
 
+sync var knight_one_id = 0
+sync var knight_two_id = 0
+
 # Connect all functions
 
 func _ready():
@@ -19,13 +22,12 @@ func _ready():
 	get_tree().connect("connected_to_server", self, "_connected_ok")
 	get_tree().connect("connection_failed", self, "_connected_fail")
 	get_tree().connect("server_disconnected", self, "_server_disconnected")
-	
-	host_game()
 
 func _player_connected(id):
 	# Called on both clients and server when a peer connects.
 	# DebugHud.emit_message("Player connected: {0}".format([id]))
 	rpc_id(id, "register_player", player_states[network_peer.get_unique_id()])
+	print("PLAYER CONNECTED: %d" % (id))
 
 func _player_disconnected(id):
 	player_states.erase(id) # Erase player from info.
@@ -46,6 +48,13 @@ remote func register_player(state):
 	# Store the info
 	player_states[id] = state
 	
+	if state["knight_one"]:
+		knight_one.assign_control(id)
+		knight_two.assign_control(get_tree().get_network_unique_id())
+	if state["knight_two"]:
+		knight_one.assign_control(get_tree().get_network_unique_id())
+		knight_two.assign_control(id)
+	
 	update_player_list()
 	
 	# Call function to update lobby UI here
@@ -57,21 +66,42 @@ func update_player_list():
 #	$HUD/PlayerList.text = player_ids
 	pass
 	
-func host_game():
+func host_game(port):
+	enable_knights()
 	network_peer = NetworkedMultiplayerENet.new()
 	network_peer.create_server(DEFAULT_PORT, 2)
 	update_player_list()
 	get_tree().set_network_peer(network_peer)
 	knight_one.assign_control(network_peer.get_unique_id())
-	# knight_two.assign_control(-1)
-	# var my_player = PlayerManager.spawn_player(network_peer.get_unique_id(), spawn_position)
-	# get_node("/root/world/Camera").set_target(my_player)
+	knight_one.position = get_parent().get_node("Level/KnightOneSpawn").position
+	
+	player_states[network_peer.get_unique_id()] = {"knight_one": true, "knight_two": false}
 
-func join_game(ip):
+func join_game(ip, port):
+	enable_knights()
 	network_peer = NetworkedMultiplayerENet.new()
 	network_peer.create_client(ip, DEFAULT_PORT)
 	update_player_list()
 	get_tree().set_network_peer(network_peer)
 	knight_two.assign_control(network_peer.get_unique_id())
-	# var my_player = PlayerManager.spawn_player(network_peer.get_unique_id(), spawn_position)
-	# get_node("/root/world/Camera").set_target(my_player)
+	knight_two.position = get_parent().get_node("Level/KnightTwoSpawn").position
+	
+	player_states[network_peer.get_unique_id()] = {"knight_one": false, "knight_two": true}
+
+func enable_knights():
+	knight_one.enable()
+	knight_two.enable()
+
+func _on_HostButton_pressed():
+	get_parent().get_node("LobbyUI").hide()
+	var ip_port = get_ip_port_from_input()
+	host_game(ip_port[1])
+
+func _on_JoinButton_pressed():
+	get_parent().get_node("LobbyUI").hide()
+	var ip_port = get_ip_port_from_input()
+	join_game(ip_port[0], ip_port[1])
+
+func get_ip_port_from_input():
+	var text = get_parent().get_node("LobbyUI/VBoxContainer/AddressInput").text
+	return text.split(":")

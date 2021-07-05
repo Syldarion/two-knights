@@ -13,7 +13,8 @@ var flying
 var owner_id
 
 func _ready():
-	pass
+	set_process(false)
+	set_physics_process(false)
 
 func _physics_process(delta):
 	if is_network_master():
