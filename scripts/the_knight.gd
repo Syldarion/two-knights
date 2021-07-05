@@ -28,8 +28,8 @@ var can_drop = false
 var is_dropping = false
 
 var can_counter = true
-var is_countering = false
-var counter_frames = 0
+remotesync var is_countering = false
+remotesync var counter_frames = 0
 
 var can_throw = true
 var has_thrown = false
@@ -38,12 +38,16 @@ var is_retrieving = false
 
 var ignore_input = false
 
-var left_axis_input = Vector2()
-var right_axis_input = Vector2()
+var move_axis_input = Vector2()
+var sword_axis_input = Vector2()
 
 const INPUT_KB = 0
 const INPUT_GP = 1
 var current_input = INPUT_KB
+
+signal knight_died
+
+var owner_id
 
 func _ready():
 	set_process(false)
@@ -68,9 +72,9 @@ func _physics_process(delta):
 		velocity.x = 0
 		
 		if is_countering:
-			counter_frames += 1
+			rset("counter_frames", counter_frames + 1)
 			if counter_frames > counter_frames_max:
-				is_countering = false
+				rset("is_countering", false)
 				can_counter = true
 			modulate = Color.blue
 		else:
@@ -109,15 +113,15 @@ func _physics_process(delta):
 			velocity.x = 0
 			velocity.y = drop_speed
 			
-		if left_axis_input.x < -0.1:
+		if move_axis_input.x < -0.1:
 			velocity.x -= move_speed
 			face(-1)
-		elif left_axis_input.x > 0.1:
+		elif move_axis_input.x > 0.1:
 			velocity.x += move_speed
 			face(1)
 		
 		if not has_thrown and not is_dropping:
-			var point_angle = get_point_and_angle(left_axis_input.x, left_axis_input.y)
+			var point_angle = get_point_and_angle(sword_axis_input.x, sword_axis_input.y)
 			held_sword.position = position + Vector2(point_angle.x, point_angle.y) * 16
 			held_sword.rotation_degrees = point_angle.z
 		
@@ -126,6 +130,10 @@ func _physics_process(delta):
 		rset_unreliable("puppet_pos", global_transform.origin)
 	else:
 		global_transform.origin = puppet_pos
+		if is_countering:
+			modulate = Color.blue
+		else:
+			modulate = Color.white
 
 func _notification(what):
 	match what:
@@ -138,13 +146,13 @@ func get_input():
 	if ignore_input:
 		return
 	
-	left_axis_input = Vector2()
-	right_axis_input = Vector2()
+	move_axis_input = Vector2()
+	sword_axis_input = Vector2()
 	
 	if Input.is_action_just_pressed("counter") and can_counter:
-		is_countering = true
+		rset("is_countering", true)
 		can_counter = false
-		counter_frames = 0
+		rset("counter_frames", 0)
 	
 	if Input.is_action_just_pressed("drop") and can_drop:
 		is_dropping = true
@@ -170,21 +178,20 @@ func get_input():
 	
 	if not has_thrown:
 		if Input.is_action_just_pressed("throw"):
-			held_sword.throw(left_axis_input)
+			held_sword.throw(sword_axis_input)
 			has_thrown = true
 	elif Input.is_action_just_pressed("throw") and has_thrown:
 		held_sword.halt()
 		is_retrieving = true
 
 func get_axis_input_kb():
-	left_axis_input = get_wasd_input()
-	right_axis_input = get_mouse_dir()
+	move_axis_input = get_wasd_input()
+	sword_axis_input = get_mouse_dir()
 
 func get_axis_input_gp():
-	left_axis_input = Vector2(Input.get_joy_axis(0, JOY_AXIS_0),
+	move_axis_input = Vector2(Input.get_joy_axis(0, JOY_AXIS_0),
 							  Input.get_joy_axis(0, JOY_AXIS_1))
-	right_axis_input = Vector2(Input.get_joy_axis(0, JOY_AXIS_2),
-							   Input.get_joy_axis(0, JOY_AXIS_3))
+	sword_axis_input = move_axis_input
 
 func get_wasd_input():
 	var left = -1 if Input.is_key_pressed(KEY_A) else 0
@@ -206,10 +213,43 @@ func face(direction):
 
 func assign_control(id):
 	set_network_master(id)
+	owner_id = id
 	held_sword.set_network_master(id)
+	held_sword.owner_id = id
 
 func grab_sword(sword):
 	add_child(sword)
+
+func kill():
+	emit_signal("knight_died")
+	print("KILLED")
+
+func reset():
+	held_sword.halt()
+	
+	velocity = Vector2()
+	facing = 1
+
+	can_jump = true
+	is_jumping = false
+	jump_frames = 0
+
+	can_drop = false
+	is_dropping = false
+
+	can_counter = true
+	is_countering = false
+	counter_frames = 0
+
+	can_throw = true
+	has_thrown = false
+	can_retrieve = false
+	is_retrieving = false
+
+	ignore_input = false
+
+	move_axis_input = Vector2()
+	sword_axis_input = Vector2()
 
 func get_point_and_angle(axis_x, axis_y):
 	var unit_coord = Vector2.RIGHT

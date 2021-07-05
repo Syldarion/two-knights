@@ -11,9 +11,6 @@ onready var knight_two = get_node(knight_two_path) as Knight
 var network_peer = null
 var player_states = {}
 
-sync var knight_one_id = 0
-sync var knight_two_id = 0
-
 # Connect all functions
 
 func _ready():
@@ -74,7 +71,9 @@ func host_game(port):
 	get_tree().set_network_peer(network_peer)
 	knight_one.assign_control(network_peer.get_unique_id())
 	knight_one.position = get_parent().get_node("Level/KnightOneSpawn").position
-	
+	knight_one.connect("knight_died", self, "reset_game")
+	knight_two.connect("knight_died", self, "reset_game")
+		
 	player_states[network_peer.get_unique_id()] = {"knight_one": true, "knight_two": false}
 
 func join_game(ip, port):
@@ -85,8 +84,19 @@ func join_game(ip, port):
 	get_tree().set_network_peer(network_peer)
 	knight_two.assign_control(network_peer.get_unique_id())
 	knight_two.position = get_parent().get_node("Level/KnightTwoSpawn").position
+	knight_one.connect("knight_died", self, "reset_game")
+	knight_two.connect("knight_died", self, "reset_game")
 	
 	player_states[network_peer.get_unique_id()] = {"knight_one": false, "knight_two": true}
+
+func reset_game():
+	rpc("reset_knights")
+	
+remotesync func reset_knights():
+	knight_one.position = get_parent().get_node("Level/KnightOneSpawn").position
+	knight_two.position = get_parent().get_node("Level/KnightTwoSpawn").position
+	knight_one.reset()
+	knight_two.reset()
 
 func enable_knights():
 	knight_one.enable()

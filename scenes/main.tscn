@@ -47,7 +47,7 @@ dash_frames_max = 30
 dash_speed = 1024.0
 drop_speed = 512.0
 sword_grab_distance = 16.0
-counter_frames_max = 3
+counter_frames_max = 24
 fall_speed = 20.0
 held_sword_path = NodePath("../SwordOne")
 
@@ -60,6 +60,7 @@ shape = SubResource( 1 )
 [node name="SwordOne" type="KinematicBody2D" parent="."]
 position = Vector2( 96, 184 )
 collision_layer = 8
+collision_mask = 5
 script = ExtResource( 8 )
 throw_speed = 400.0
 rotation_speed = 1080.0
@@ -73,8 +74,8 @@ shape = SubResource( 2 )
 
 [node name="KnightTwo" type="KinematicBody2D" parent="."]
 position = Vector2( 80, 184 )
-collision_layer = 2
-collision_mask = 17
+collision_layer = 4
+collision_mask = 9
 script = ExtResource( 4 )
 move_speed = 128.0
 jump_force = 250.0
@@ -95,7 +96,8 @@ shape = SubResource( 1 )
 
 [node name="SwordTwo" type="KinematicBody2D" parent="."]
 position = Vector2( 96, 184 )
-collision_layer = 8
+collision_layer = 16
+collision_mask = 3
 script = ExtResource( 8 )
 throw_speed = 400.0
 rotation_speed = 1080.0

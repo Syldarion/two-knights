@@ -39,8 +39,13 @@ func halt():
 
 func check_collision(collision: KinematicCollision2D):
 	var knight = collision.collider
-	if not knight:
+	if not knight is Knight:
 		return
 	
-	if collision.collider_id == owner_id:
-		knight.grab_sword(self)
+	if knight.owner_id == owner_id:
+		return
+	
+	if knight.is_countering:
+		direction *= -1
+	else:
+		knight.kill()
