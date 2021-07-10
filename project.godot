@@ -9,10 +9,20 @@
 config_version=4
 
 _global_script_classes=[ {
+"base": "Node",
+"class": "GameManager",
+"language": "GDScript",
+"path": "res://scripts/game_manager.gd"
+}, {
 "base": "KinematicBody2D",
 "class": "Knight",
 "language": "GDScript",
 "path": "res://scripts/the_knight.gd"
+}, {
+"base": "Node",
+"class": "NetworkManager",
+"language": "GDScript",
+"path": "res://scripts/network_manager.gd"
 }, {
 "base": "KinematicBody2D",
 "class": "Sword",
@@ -20,7 +30,9 @@ _global_script_classes=[ {
 "path": "res://scripts/the_sword.gd"
 } ]
 _global_script_class_icons={
+"GameManager": "",
 "Knight": "",
+"NetworkManager": "",
 "Sword": ""
 }
 
@@ -31,6 +43,10 @@ run/main_scene="res://scenes/main.tscn"
 boot_splash/image="res://sprites/LogoSplash.png"
 boot_splash/bg_color=Color( 0, 0, 0, 1 )
 config/icon="res://icon.png"
+
+[autoload]
+
+NetworkStatusUI="*res://scenes/NetworkStatusUI.tscn"
 
 [display]
 

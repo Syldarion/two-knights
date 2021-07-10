@@ -8,6 +8,7 @@ puppet var puppet_pos = Vector2()
 puppet var puppet_rot = 0.0
 
 var direction
+var active
 var flying
 
 var owner_id
@@ -18,11 +19,15 @@ func _ready():
 
 func _physics_process(delta):
 	if is_network_master():
-		if flying:
-			var collision = move_and_collide(direction * throw_speed * delta)
+		if active:
+			var collision
+			if flying:
+				rotation_degrees = rad2deg(direction.angle())
+				collision = move_and_collide(direction * throw_speed * delta)
+			else:
+				collision = move_and_collide(Vector2.ZERO)
 			if collision:
 				check_collision(collision)
-			rotation_degrees += rotation_speed * delta
 		
 		rset_unreliable("puppet_pos", global_transform.origin)
 		rset_unreliable("puppet_rot", rotation_degrees)
@@ -32,20 +37,27 @@ func _physics_process(delta):
 
 func throw(throw_dir):
 	direction = throw_dir
+	active = true
 	flying = true
 
 func halt():
+	active = false
 	flying = false
 
 func check_collision(collision: KinematicCollision2D):
 	var knight = collision.collider
 	if not knight is Knight:
+		active = false
+		flying = false
 		return
 	
 	if knight.owner_id == owner_id:
 		return
 	
 	if knight.is_countering:
-		direction *= -1
+		if flying:
+			direction *= -1
+		else:
+			active = false
 	else:
 		knight.kill()

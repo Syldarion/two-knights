@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=2]
+[gd_scene load_steps=17 format=2]
 
 [ext_resource path="res://sprites/LevelFloor.png" type="Texture" id=1]
 [ext_resource path="res://sprites/TheKnight.png" type="Texture" id=2]
@@ -9,6 +9,7 @@
 [ext_resource path="res://scripts/network_manager.gd" type="Script" id=7]
 [ext_resource path="res://scripts/the_sword.gd" type="Script" id=8]
 [ext_resource path="res://sprites/TheKnightTwo.png" type="Texture" id=9]
+[ext_resource path="res://scripts/game_manager.gd" type="Script" id=10]
 
 [sub_resource type="RectangleShape2D" id=1]
 extents = Vector2( 8, 8 )
@@ -29,13 +30,13 @@ extents = Vector2( 160, 5 )
 extents = Vector2( 5, 120 )
 
 [node name="world" type="Node2D"]
+script = ExtResource( 10 )
+freeze_time = 1.0
 
 [node name="NetworkManager" type="Node2D" parent="."]
 script = ExtResource( 7 )
-knight_one_path = NodePath("../KnightOne")
-knight_two_path = NodePath("../KnightTwo")
 
-[node name="KnightOne" type="KinematicBody2D" parent="."]
+[node name="BlueKnight" type="KinematicBody2D" parent="."]
 position = Vector2( 80, 184 )
 collision_layer = 2
 collision_mask = 17
@@ -49,15 +50,15 @@ drop_speed = 512.0
 sword_grab_distance = 16.0
 counter_frames_max = 24
 fall_speed = 20.0
-held_sword_path = NodePath("../SwordOne")
+held_sword_path = NodePath("../BlueSword")
 
-[node name="TheKnight" type="Sprite" parent="KnightOne"]
+[node name="TheKnight" type="Sprite" parent="BlueKnight"]
 texture = ExtResource( 2 )
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="KnightOne"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BlueKnight"]
 shape = SubResource( 1 )
 
-[node name="SwordOne" type="KinematicBody2D" parent="."]
+[node name="BlueSword" type="KinematicBody2D" parent="."]
 position = Vector2( 96, 184 )
 collision_layer = 8
 collision_mask = 5
@@ -65,15 +66,15 @@ script = ExtResource( 8 )
 throw_speed = 400.0
 rotation_speed = 1080.0
 
-[node name="TheSword" type="Sprite" parent="SwordOne"]
+[node name="TheSword" type="Sprite" parent="BlueSword"]
 texture = ExtResource( 3 )
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="SwordOne"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BlueSword"]
 position = Vector2( 3, 0 )
 shape = SubResource( 2 )
 
-[node name="KnightTwo" type="KinematicBody2D" parent="."]
-position = Vector2( 80, 184 )
+[node name="RedKnight" type="KinematicBody2D" parent="."]
+position = Vector2( 240, 184 )
 collision_layer = 4
 collision_mask = 9
 script = ExtResource( 4 )
@@ -86,26 +87,28 @@ drop_speed = 512.0
 sword_grab_distance = 16.0
 counter_frames_max = 3
 fall_speed = 20.0
-held_sword_path = NodePath("../SwordTwo")
+held_sword_path = NodePath("../RedSword")
 
-[node name="TheKnight" type="Sprite" parent="KnightTwo"]
+[node name="TheKnight" type="Sprite" parent="RedKnight"]
 texture = ExtResource( 9 )
+flip_h = true
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="KnightTwo"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="RedKnight"]
 shape = SubResource( 1 )
 
-[node name="SwordTwo" type="KinematicBody2D" parent="."]
-position = Vector2( 96, 184 )
+[node name="RedSword" type="KinematicBody2D" parent="."]
+position = Vector2( 224, 184 )
+rotation = 3.14159
 collision_layer = 16
 collision_mask = 3
 script = ExtResource( 8 )
 throw_speed = 400.0
 rotation_speed = 1080.0
 
-[node name="TheSword" type="Sprite" parent="SwordTwo"]
+[node name="TheSword" type="Sprite" parent="RedSword"]
 texture = ExtResource( 3 )
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="SwordTwo"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="RedSword"]
 position = Vector2( 3, 0 )
 shape = SubResource( 2 )
 
@@ -190,7 +193,7 @@ __meta__ = {
 margin_left = 7.0
 margin_top = 7.0
 margin_right = 114.0
-margin_bottom = 67.0
+margin_bottom = 87.0
 
 [node name="AddressInput" type="LineEdit" parent="LobbyUI/VBoxContainer"]
 margin_right = 107.0
@@ -213,5 +216,49 @@ margin_bottom = 60.0
 custom_fonts/font = ExtResource( 6 )
 text = "Join as Red Knight"
 
+[node name="StartButton" type="Button" parent="LobbyUI/VBoxContainer"]
+margin_top = 64.0
+margin_right = 107.0
+margin_bottom = 80.0
+custom_fonts/font = ExtResource( 6 )
+text = "Start Game"
+
+[node name="ScoreUI" type="PanelContainer" parent="."]
+visible = false
+margin_left = 137.331
+margin_top = 9.13444
+margin_right = 183.331
+margin_bottom = 33.1344
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="HBoxContainer" type="HBoxContainer" parent="ScoreUI"]
+margin_left = 7.0
+margin_top = 7.0
+margin_right = 39.0
+margin_bottom = 17.0
+
+[node name="BlueKnightScore" type="Label" parent="ScoreUI/HBoxContainer"]
+modulate = Color( 0.25098, 0.25098, 1, 1 )
+margin_right = 10.0
+margin_bottom = 10.0
+custom_fonts/font = ExtResource( 6 )
+text = "0"
+
+[node name="VSeparator" type="VSeparator" parent="ScoreUI/HBoxContainer"]
+margin_left = 14.0
+margin_right = 18.0
+margin_bottom = 10.0
+
+[node name="RedKnightScore" type="Label" parent="ScoreUI/HBoxContainer"]
+modulate = Color( 1, 0.25098, 0.25098, 1 )
+margin_left = 22.0
+margin_right = 32.0
+margin_bottom = 10.0
+custom_fonts/font = ExtResource( 6 )
+text = "0"
+
 [connection signal="pressed" from="LobbyUI/VBoxContainer/HostButton" to="NetworkManager" method="_on_HostButton_pressed"]
 [connection signal="pressed" from="LobbyUI/VBoxContainer/JoinButton" to="NetworkManager" method="_on_JoinButton_pressed"]
+[connection signal="pressed" from="LobbyUI/VBoxContainer/StartButton" to="." method="_on_StartButton_pressed"]

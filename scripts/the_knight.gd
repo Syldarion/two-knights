@@ -65,6 +65,12 @@ func enable():
 	set_physics_process(true)
 	held_sword.set_physics_process(true)
 
+func disable():
+	set_process(false)
+	held_sword.set_process(false)
+	set_physics_process(false)
+	held_sword.set_physics_process(false)
+
 func _physics_process(delta):
 	if is_network_master():
 		get_input()
@@ -108,19 +114,21 @@ func _physics_process(delta):
 		
 		if is_dropping:
 			var point_angle = get_point_and_angle(0.0, 1.0)
-			held_sword.position = position + Vector2(point_angle.x, point_angle.y) * 16
+			held_sword.position = global_position + Vector2(point_angle.x, point_angle.y) * 16
 			held_sword.rotation_degrees = point_angle.z
 			velocity.x = 0
 			velocity.y = drop_speed
-			
-		if move_axis_input.x < -0.1:
-			velocity.x -= move_speed
-			face(-1)
-		elif move_axis_input.x > 0.1:
-			velocity.x += move_speed
-			face(1)
+			held_sword.active = true
+		else:
+			if move_axis_input.x < -0.1:
+				velocity.x -= move_speed
+				face(-1)
+			elif move_axis_input.x > 0.1:
+				velocity.x += move_speed
+				face(1)
 		
 		if not has_thrown and not is_dropping:
+			held_sword.active = false
 			var point_angle = get_point_and_angle(sword_axis_input.x, sword_axis_input.y)
 			held_sword.position = position + Vector2(point_angle.x, point_angle.y) * 16
 			held_sword.rotation_degrees = point_angle.z
@@ -212,6 +220,9 @@ func face(direction):
 		$TheKnight.flip_h = false
 
 func assign_control(id):
+	rpc("assign_control_remote", id)
+
+remotesync func assign_control_remote(id):
 	set_network_master(id)
 	owner_id = id
 	held_sword.set_network_master(id)
@@ -221,6 +232,9 @@ func grab_sword(sword):
 	add_child(sword)
 
 func kill():
+	rpc("kill_remote")
+
+remotesync func kill_remote():
 	emit_signal("knight_died")
 	print("KILLED")
 
@@ -245,8 +259,6 @@ func reset():
 	has_thrown = false
 	can_retrieve = false
 	is_retrieving = false
-
-	ignore_input = false
 
 	move_axis_input = Vector2()
 	sword_axis_input = Vector2()
